@@ -4,7 +4,11 @@ let uniqueValidator = require('mongoose-unique-validator');
 
 // SCHEMA FOR ADMIN USERS
 const PermissionsSchema = mongoose.Schema({
-    component_route : {
+    component : {
+        type : String,
+        required : true
+    },
+    route : {
         type : String,
         required : true
     },

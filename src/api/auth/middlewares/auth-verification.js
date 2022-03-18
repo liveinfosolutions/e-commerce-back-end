@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/auth.config');
-const globalConstant = require('../auth-global');
+const GLOBAL_MESSAGES = require('../../../../_global/global.messages');
 
 exports.verifyToken = (req, res, next) => {
     // get token from the request
@@ -14,16 +14,16 @@ exports.verifyToken = (req, res, next) => {
 
     if (!token) {
         return res.status(403).send({
-            status: globalConstant.ERROR_STATUS,
-            message: globalConstant.NOT_AUTHORIZED_USER_ERROR_MESSAGE
+            status: GLOBAL_MESSAGES.ERROR_STATUS,
+            message: GLOBAL_MESSAGES.NOT_AUTHORIZED_USER_ERROR_MESSAGE
         })
     }
 
     jwt.verify(token, config.secret, (err, decoded) => {
         if (err) {
             return res.status(401).send({
-                status: globalConstant.ERROR_STATUS,
-                message: globalConstant.NOT_AUTHORIZED_USER_ERROR_MESSAGE
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.NOT_AUTHORIZED_USER_ERROR_MESSAGE
             })
         }
         req.userId = decoded.user_id;

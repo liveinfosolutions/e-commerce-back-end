@@ -1,11 +1,13 @@
 'use strict'
 const { AdminUserModel } = require('../models/auth.model');
 const { secret } = require('../config/auth.config');
-const globalConstant = require('../auth-global');
+const GLOBAL_CONSTANT = require('../../../../_global/global');
+const GLOBAL_MESSAGES = require('../../../../_global/global.messages')
+const GLOBAL_MAIL = require('../../../../_global/global.mail')
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// Method for Super & Sub Admin signup
+// todo -> Method for Super & Sub Admin signup
 exports.adminSignup = (req, res) => {
     let data = req.body;
     if (req.userId) {
@@ -25,10 +27,10 @@ exports.adminSignup = (req, res) => {
         // To create Super Admin
         if (data.is_super_admin) {
             // Multiple Super Admins are not allowed
-            if (!globalConstant.MULTIPLE_SUPER_ADMINS_ALLOWED) {
+            if (!GLOBAL_CONSTANT.MULTIPLE_SUPER_ADMINS_ALLOWED) {
                 return res.status(200).send({
-                    status: globalConstant.ERROR_STATUS,
-                    message: globalConstant.UPGRADE_PLAN_ERROR_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
+                    status: GLOBAL_MESSAGES.ERROR_STATUS,
+                    message: GLOBAL_MESSAGES.UPGRADE_PLAN_ERROR_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
                 });
             } else {
                 // Multiple Super Admins are allowed
@@ -40,76 +42,93 @@ exports.adminSignup = (req, res) => {
                             // got error while saving super admin user
                             if (err) {
                                 return res.status(200).send({
-                                    status: globalConstant.ERROR_STATUS,
+                                    status: GLOBAL_MESSAGES.ERROR_STATUS,
                                     data: err,
-                                    message: globalConstant.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
+                                    message: GLOBAL_MESSAGES.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
                                 });
                             }
                             // data of saved super admin user not found
                             if (!SuperAdminSaved) {
                                 return res.status(200).send({
-                                    status: globalConstant.ERROR_STATUS,
-                                    message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
+                                    status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                    message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
                                 });
                             }
                             // successfully saved super admin
                             return res.status(200).send({
-                                status: globalConstant.SUCCESS_STATUS,
-                                message: globalConstant.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
+                                status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                                message: GLOBAL_MESSAGES.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
                             });
                         })
                     }
-
-                    // If have super Admin and creator is not provided
-                    if (superAdmins.length > 0 && !data.creator) {
-                        return res.status(200).send({
-                            status: globalConstant.ERROR_STATUS,
-                            message: globalConstant.CONTACT_SUPER_ADMIN_ERROR_MESSAGE.replace('_LABEL_NAME', 'another super admin creation')
-                        });
-                    }
-
-                    // Other Super Admin if Unlimited Provided Super Admin
-                    if (globalConstant.NUMBER_OF_SUPER_ADMIN_ALLOWED != 'UNLIMITED') {
-                        // Return If user already created provided numbers of super admins
-                        if (globalConstant.NUMBER_OF_SUPER_ADMINS_ALLOWED == superAdmins.length) {
+                    // ! Check if user is authorized to add new admin
+                    AdminUserModel.findById({_id : data.creator},(err,Admin)=>{                
+                        if(!Admin){
                             return res.status(200).send({
-                                status: globalConstant.ERROR_STATUS,
-                                message: globalConstant.UPGRADE_PLAN_ERROR_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
+                                status : GLOBAL_MESSAGES.ERROR_STATUS,
+                                data : Admin,
+                                message : GLOBAL_MESSAGES.NOT_FOUND_MESSAGE.replace('_LABEL_NAME', 'Admin')
+                            })
+                        }
+        
+                        if(!Admin.is_super_admin){
+                            return res.status(200).send({
+                                status : GLOBAL_MESSAGES.ERROR_STATUS,
+                                message : GLOBAL_MESSAGES.NOT_AUTHORIZED_USER_ERROR_MESSAGE.replace('_LABEL_NAME', 'to add sub-admins')
+                            })
+                        }
+                        
+                        // If have super Admin and creator is not provided
+                        if (superAdmins.length > 0 && !data.creator) {
+                            return res.status(200).send({
+                                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                message: GLOBAL_MESSAGES.CONTACT_SUPER_ADMIN_ERROR_MESSAGE.replace('_LABEL_NAME', 'another super admin creation')
                             });
                         }
-                    }
-                    // Other Super Admin if Numbers of Super Admins Provided
-                    if ((globalConstant.NUMBER_OF_SUPER_ADMINS_ALLOWED == 'UNLIMITED' || globalConstant.NUMBER_OF_SUPER_ADMINS_ALLOWED > superAdmins.length) && (superAdmins.length != 0)) {
-                        // save new super admin user
-                        newAdminUser.save((err, SuperAdminSaved) => {
-                            // got error while saving super admin user
-                            if (err) {
+    
+                        // Other Super Admin if Unlimited Provided Super Admin
+                        if (GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMIN_ALLOWED != 'UNLIMITED') {
+                            // Return If user already created provided numbers of super admins
+                            if (GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMINS_ALLOWED == superAdmins.length) {
                                 return res.status(200).send({
-                                    status: globalConstant.ERROR_STATUS,
-                                    data: err,
-                                    message: globalConstant.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
+                                    status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                    message: GLOBAL_MESSAGES.UPGRADE_PLAN_ERROR_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
                                 });
                             }
-                            // data of saved super admin user not found
-                            if (!SuperAdminSaved) {
+                        }
+                        // Other Super Admin if Numbers of Super Admins Provided
+                        if ((GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMINS_ALLOWED == 'UNLIMITED' || GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMINS_ALLOWED > superAdmins.length) && (superAdmins.length != 0)) {
+                            // save new super admin user
+                            newAdminUser.save((err, SuperAdminSaved) => {
+                                // got error while saving super admin user
+                                if (err) {
+                                    return res.status(200).send({
+                                        status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                        data: err,
+                                        message: GLOBAL_MESSAGES.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
+                                    });
+                                }
+                                // data of saved super admin user not found
+                                if (!SuperAdminSaved) {
+                                    return res.status(200).send({
+                                        status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                        message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
+                                    });
+                                }
+                                // successfully saved super admin
                                 return res.status(200).send({
-                                    status: globalConstant.ERROR_STATUS,
-                                    message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
+                                    status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                                    message: GLOBAL_MESSAGES.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
                                 });
-                            }
-                            // successfully saved super admin
-                            return res.status(200).send({
-                                status: globalConstant.SUCCESS_STATUS,
-                                message: globalConstant.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Super Admin')
-                            });
-                        })
-                    }
+                            })
+                        }
+                    });
                 }).catch(err => {
                     if (err) {
                         return res.status(200).send({
-                            status: globalConstant.ERROR_STATUS,
+                            status: GLOBAL_MESSAGES.ERROR_STATUS,
                             data: err,
-                            message: globalConstant.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'adminSignup() Method *comment - Multiple Super Admins are allowed')
+                            message: GLOBAL_MESSAGES.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'adminSignup() Method *comment - Multiple Super Admins are allowed')
                         });
                     }
                 })
@@ -117,101 +136,119 @@ exports.adminSignup = (req, res) => {
         }
         // To create Sub-Admin
         if (!data.is_super_admin) {
-            // Multiple sub-admins are not allowed
-            if (!globalConstant.MULTIPLE_SUB_ADMINS_ALLOWED) {
-                return res.status(200).send({
-                    status: globalConstant.ERROR_STATUS,
-                    message: globalConstant.UPGRADE_PLAN_ERROR_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
-                });
-            } else {
-                // Multiple sub-admins are allowed
-                AdminUserModel.find().lean().then(Admins => {
-                    let subAdmins = [];
-                    let superAdmins = [];
+            // ! Check if user is authorized to add new admin
+            AdminUserModel.findById({_id : data.creator},(err,Admin)=>{                
+                if(!Admin){
+                    return res.status(200).send({
+                        status : GLOBAL_MESSAGES.ERROR_STATUS,
+                        data : Admin,
+                        message : GLOBAL_MESSAGES.NOT_FOUND_MESSAGE.replace('_LABEL_NAME', 'Admin')
+                    })
+                }
 
-                    for (let admin of Admins) {
-                        // if super admin then add to superAdmins
-                        if (admin.is_super_admin) {
-                            superAdmins.push(admin)
-                        } else { // add to subAdmins
-                            subAdmins.push(admin)
+                if(!Admin.is_super_admin){
+                    return res.status(200).send({
+                        status : GLOBAL_MESSAGES.ERROR_STATUS,
+                        message : GLOBAL_MESSAGES.NOT_AUTHORIZED_USER_ERROR_MESSAGE.replace('_LABEL_NAME', 'to add sub-admins')
+                    })
+                }
+
+                // Multiple sub-admins are not allowed
+                if (!GLOBAL_CONSTANT.MULTIPLE_SUB_ADMINS_ALLOWED) {
+                    return res.status(200).send({
+                        status: GLOBAL_MESSAGES.ERROR_STATUS,
+                        message: GLOBAL_MESSAGES.UPGRADE_PLAN_ERROR_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+                    });
+                } else {
+                    // Multiple sub-admins are allowed
+                    AdminUserModel.find().lean().then(Admins => {
+                        let subAdmins = [];
+                        let superAdmins = [];
+    
+                        for (let admin of Admins) {
+                            // if super admin then add to superAdmins
+                            if (admin.is_super_admin) {
+                                superAdmins.push(admin)
+                            } else { // add to subAdmins
+                                subAdmins.push(admin)
+                            }
                         }
-                    }
-
-                    // If no Super Admin available return
-                    if (superAdmins.length == 0) {
-                        return res.status(200).send({
-                            status: globalConstant.ERROR_STATUS,
-                            message: globalConstant.ERROR_CANNOT_CREATE_SUB_ADMIN_WITHOUT_SUPER_ADMIN.replace('_LABEL_NAME', 'Sub-Admin')
-                        });
-                    }
-
-                    // if there is no creator for sub admin return
-                    if (!data.creator) {
-                        return res.status(200).send({
-                            status: globalConstant.ERROR_STATUS,
-                            message: globalConstant.CONTACT_SUPER_ADMIN_ERROR_MESSAGE.replace('_LABEL_NAME', 'creation of Sub-Admin')
-                        });
-                    }
-
-                    if (globalConstant.NUMBER_OF_SUB_ADMINS_ALLOWED != 'UNLIMITED') {
-                        // Return If user already created provided numbers of sub-admins    
-                        if (globalConstant.NUMBER_OF_SUB_ADMINS_ALLOWED == subAdmins.length) {
+    
+                        // If no Super Admin available return
+                        if (superAdmins.length == 0) {
                             return res.status(200).send({
-                                status: globalConstant.ERROR_STATUS,
-                                message: globalConstant.UPGRADE_PLAN_ERROR_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+                                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                message: GLOBAL_MESSAGES.ERROR_CANNOT_CREATE_SUB_ADMIN_WITHOUT_SUPER_ADMIN_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
                             });
                         }
-                    }
-
-                    if (globalConstant.NUMBER_OF_SUB_ADMINS_ALLOWED == 'UNLIMITED' || globalConstant.NUMBER_OF_SUB_ADMINS_ALLOWED > subAdmins.length) {
-                        // save new sub-admin user
-                        newAdminUser.save((err, SubAdminSaved) => {
-                            // got error while saving super admin user
-                            if (err) {
-                                return res.status(200).send({
-                                    status: globalConstant.ERROR_STATUS,
-                                    data: err,
-                                    message: globalConstant.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
-                                });
-                            }
-                            // data of saved sub-admin user not found
-                            if (!SubAdminSaved) {
-                                return res.status(200).send({
-                                    status: globalConstant.ERROR_STATUS,
-                                    message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
-                                });
-                            }
-                            // successfully saved sub-admin
+    
+                        // if there is no creator for sub admin return
+                        if (!data.creator) {
                             return res.status(200).send({
-                                status: globalConstant.SUCCESS_STATUS,
-                                message: globalConstant.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+                                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                message: GLOBAL_MESSAGES.CONTACT_SUPER_ADMIN_ERROR_MESSAGE.replace('_LABEL_NAME', 'creation of Sub-Admin')
                             });
-                        })
-                    }
-                }).catch(err => {
-                    if (err) {
-                        return res.status(200).send({
-                            status: globalConstant.ERROR_STATUS,
-                            data: err,
-                            message: globalConstant.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'adminSignup() Method *comment - Multiple sub-admins are allowed')
-                        });
-                    }
-                })
-            }
+                        }
+    
+                        if (GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED != 'UNLIMITED') {
+                            // Return If user already created provided numbers of sub-admins    
+                            if (GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED == subAdmins.length) {
+                                return res.status(200).send({
+                                    status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                    message: GLOBAL_MESSAGES.UPGRADE_PLAN_ERROR_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+                                });
+                            }
+                        }
+    
+                        if (GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED == 'UNLIMITED' || GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED > subAdmins.length) {
+                            // save new sub-admin user
+                            newAdminUser.save((err, SubAdminSaved) => {
+                                // got error while saving super admin user
+                                if (err) {
+                                    return res.status(200).send({
+                                        status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                        data: err,
+                                        message: GLOBAL_MESSAGES.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+                                    });
+                                }
+                                // data of saved sub-admin user not found
+                                if (!SubAdminSaved) {
+                                    return res.status(200).send({
+                                        status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                        message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+                                    });
+                                }
+                                // successfully saved sub-admin
+                                return res.status(200).send({
+                                    status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                                    message: GLOBAL_MESSAGES.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+                                });
+                            })
+                        }
+                    }).catch(err => {
+                        if (err) {
+                            return res.status(200).send({
+                                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                                data: err,
+                                message: GLOBAL_MESSAGES.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'adminSignup() Method *comment - Multiple sub-admins are allowed')
+                            });
+                        }
+                    })
+                }
+            })
         }
     })
 
 }
 
-// Method for Super & Sub Admin login
+// todo -> Method for Super & Sub Admin login
 exports.adminLogin = (req, res) => {
     AdminUserModel.findOne({ email: req.body.email.toLowerCase() }).then((AdminUserData) => {
         // if user NOT FOUND
         if (!AdminUserData) {
             return res.status(200).send({
-                status: globalConstant.ERROR_STATUS,
-                message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
             });
         }
 
@@ -230,22 +267,22 @@ exports.adminLogin = (req, res) => {
                 return res.status(200).send({
                     data: data,
                     token: token,
-                    status: globalConstant.SUCCESS_STATUS,
-                    message: globalConstant.SUCCESSFULLY_LOGGED_IN_MESSAGE.replace('_LABEL_NAME', data.name)
+                    status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                    message: GLOBAL_MESSAGES.SUCCESSFULLY_LOGGED_IN_MESSAGE.replace('_LABEL_NAME', data.name)
                 });
             } else {
                 return res.status(200).send({
-                    status: globalConstant.ERROR_STATUS,
-                    message: globalConstant.PASSWORD_NOT_MATCH_ERROR_MESSAGE.replace('_LABEL_NAME', 'Login')
+                    status: GLOBAL_MESSAGES.ERROR_STATUS,
+                    message: GLOBAL_MESSAGES.PASSWORD_NOT_MATCH_ERROR_MESSAGE.replace('_LABEL_NAME', 'Login')
                 })
             }
         })
     }).catch(err => {
         if (err) {
             return res.status(200).send({
-                status: globalConstant.ERROR_STATUS,
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
                 data: err,
-                message: globalConstant.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'adminLogin() Method')
+                message: GLOBAL_MESSAGES.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'adminLogin() Method')
             });
         }
     })
@@ -258,28 +295,76 @@ exports.haveSuperAdmin = (req, res) => {
             res.status(200).send({
                 // return false if no admin user is available
                 data: false,
-                status: globalConstant.SUCCESS_STATUS,
-                message: globalConstant.NOT_FOUND_MESSAGE.replace('_LABEL_NAME', 'Super-Admin')
+                status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                message: GLOBAL_MESSAGES.NOT_FOUND_MESSAGE.replace('_LABEL_NAME', 'Super-Admin')
             })
         } else {
             res.status(200).send({
                 // return true if admin user is available
                 data: true,
-                status: globalConstant.SUCCESS_STATUS,
-                message: globalConstant.NOT_FOUND_MESSAGE.replace('_LABEL_NAME', 'Super-Admin')
+                status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                message: GLOBAL_MESSAGES.NOT_FOUND_MESSAGE.replace('_LABEL_NAME', 'Super-Admin')
             })
         }
     }).catch(err => {
         if (err) {
             return res.status(200).send({
-                status: globalConstant.ERROR_STATUS,
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
                 data: err,
-                message: globalConstant.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'haveSuperAdmin() Method')
+                message: GLOBAL_MESSAGES.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'haveSuperAdmin() Method')
             });
         }
     })
 }
 
+// todo -> Method to get all sub-admins
+exports.getSubAdmins = (req, res) => {
+    let userId = req.userId;
+    AdminUserModel.find({ _id: userId }).then((UserData) => {
+        if (!UserData) {
+            res.status(200).send({
+                data: [],
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.NOT_FOUND_MESSAGE.replace('_LABEL_NAME', 'User Not found')
+            })
+        }
+
+        AdminUserModel.find({ is_super_admin: false }).select('email name mobile_number creator permissions').then((AdminUserData) => {
+            if (AdminUserData.length == 0) {
+                res.status(200).send({
+                    // return [] if no admin user is available
+                    data: [],
+                    status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                    message: GLOBAL_MESSAGES.NOT_FOUND_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+                })
+            } else {
+                res.status(200).send({
+                    data: AdminUserData,
+                    status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                    message: GLOBAL_MESSAGES.DATA_FOUND_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+                })
+            }
+        }).catch(err => {
+            if (err) {
+                return res.status(200).send({
+                    status: GLOBAL_MESSAGES.ERROR_STATUS,
+                    data: err,
+                    message: GLOBAL_MESSAGES.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'getSubAdmins() Method 1')
+                });
+            }
+        })
+    }).catch(err => {
+        if (err) {
+            return res.status(200).send({
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                data: err,
+                message: GLOBAL_MESSAGES.UNIDENTIFIED_ERROR_MESSAGE.replace('_LABEL_NAME', 'getSubAdmins() Method 2')
+            });
+        }
+    })
+}
+
+// todo -> Method to get permissions of User
 exports.getPermissionsList = (req, res) => {
     let data = req.body;
 
@@ -287,8 +372,8 @@ exports.getPermissionsList = (req, res) => {
         // if user NOT FOUND
         if (!AdminUserData) {
             return res.status(200).send({
-                status: globalConstant.ERROR_STATUS,
-                message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
             });
         }
 
@@ -297,7 +382,7 @@ exports.getPermissionsList = (req, res) => {
 
         if (permissions.length == 0) {
             // loop over the static routes and create permissions
-            for (let route of globalConstant.PERMISSIONS) {
+            for (let route of GLOBAL_MESSAGES.PERMISSIONS) {
                 let tempPermission = {
                     component_route: route,
                     create_action: false,
@@ -312,66 +397,57 @@ exports.getPermissionsList = (req, res) => {
         if (AdminUserData) {
             return res.status(200).send({
                 data: permissions,
-                status: globalConstant.SUCCESS_STATUS,
-                message: globalConstant.DATA_FOUND_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Permissions')
+                status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                message: GLOBAL_MESSAGES.DATA_FOUND_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Permissions')
             });
         }
     });
 }
 
+// todo -> Method to update permission of User
 exports.updatePermissions = (req, res) => {
     let data = req.body;
 
-    AdminUserModel.findById(data._id).then(AdminUser => {
-        // If Admin not found
-        if (!AdminUser) {
+    // Update the Admin
+    AdminUserModel.findOneAndUpdate({ _id: data._id }, { permissions: data.permissions }, (err, AdminUpdated) => {
+        // got error while updating admin user
+        if (err) {
             return res.status(200).send({
-                status: globalConstant.ERROR_STATUS,
-                message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                data: err,
+                message: GLOBAL_MESSAGES.ERROR_WHILE_UPDATING_MESSAGE.replace('_LABEL_NAME', 'Permission')
             });
         }
-
-        // Update the Admin
-        AdminUser.permissions = data.permissions;
-        return AdminUser.save((err, AdminUpdated) => {
-            // got error while updating admin user
-            if (err) {
-                return res.status(200).send({
-                    status: globalConstant.ERROR_STATUS,
-                    data: err,
-                    message: globalConstant.ERROR_WHILE_UPDATING_MESSAGE.replace('_LABEL_NAME', 'Admin')
-                });
-            }
-            // data of saved admin user not found
-            if (!AdminUpdated) {
-                return res.status(200).send({
-                    status: globalConstant.ERROR_STATUS,
-                    message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Admin')
-                });
-            }
-            // successfully updated admin
+        // data of saved admin user not found
+        if (!AdminUpdated) {
             return res.status(200).send({
-                status: globalConstant.SUCCESS_STATUS,
-                message: globalConstant.FIELD_UPDATED_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Admin')
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Permission')
             });
-        })
+        }
+        // successfully updated admin
+        return res.status(200).send({
+            status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+            message: GLOBAL_MESSAGES.FIELD_UPDATED_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Permission')
+        });
     })
 }
 
+// todo -> Method for forgot password
 exports.forgotPassword = (req, res) => {
     let data = req.body;
     AdminUserModel.findOne({ email: data.email.toLowerCase() }).then(Admin => {
         // if admin NOT FOUND
         if (!Admin) {
             return res.status(200).send({
-                status: globalConstant.ERROR_STATUS,
-                message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Email')
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Email')
             });
         } else {
-            let resetPasswordLink = `${globalConstant.FRONT_WEBSITE_URL}/reset-password?id=${Admin._id}`
-            globalConstant.transporter.sendMail({
+            let resetPasswordLink = `${GLOBAL_CONSTANT.FRONT_WEBSITE_URL}/reset-password?id=${Admin._id}`
+            GLOBAL_MAIL.transporter.sendMail({
                 to: data.email.toLowerCase(),
-                from: globalConstant.FROM_EMAIL_ADDRESS,
+                from: GLOBAL_CONSTANT.FROM_EMAIL_ADDRESS,
                 subject: 'Forgot Password',
                 html: `
                 <!doctype html>
@@ -433,7 +509,7 @@ exports.forgotPassword = (req, res) => {
                                     </tr>
                                     <tr>
                                         <td style="text-align:center;">
-                                            <p style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">&copy; <strong>${globalConstant.WEBSITE_DOMAIN_NAME}</strong></p>
+                                            <p style="font-size:14px; color:rgba(69, 80, 86, 0.7411764705882353); line-height:18px; margin:0 0 0;">&copy; <strong>${GLOBAL_CONSTANT.WEBSITE_DOMAIN_NAME}</strong></p>
                                         </td>
                                     </tr>
                                     <tr>
@@ -451,13 +527,13 @@ exports.forgotPassword = (req, res) => {
             }).then((mailSend) => {
                 if (mailSend) {
                     return res.status(200).send({
-                        status: globalConstant.SUCCESS_STATUS,
-                        message: globalConstant.MAIL_SEND_SUCCESSFULLY.replace('_LABEL_NAME', 'Forgot Password')
+                        status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                        message: GLOBAL_MESSAGES.MAIL_SEND_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Forgot Password')
                     });
                 } else {
                     return res.status(200).send({
-                        status: globalConstant.ERROR_STATUS,
-                        message: globalConstant.ERROR_WHILE_MAIL_SEND.replace('_LABEL_NAME', 'Forgot Password')
+                        status: GLOBAL_MESSAGES.ERROR_STATUS,
+                        message: GLOBAL_MESSAGES.ERROR_WHILE_MAIL_SEND_MESSAGE.replace('_LABEL_NAME', 'Forgot Password')
                     });
                 }
             })
@@ -465,6 +541,7 @@ exports.forgotPassword = (req, res) => {
     })
 }
 
+// todo -> Method for Change Password
 exports.changePassword = (req, res) => {
     let data = req.body;
     let userId = req.userId;
@@ -473,16 +550,16 @@ exports.changePassword = (req, res) => {
         // return if user not found
         if (!User) {
             return res.status(200).send({
-                status: globalConstant.ERROR_STATUS,
-                message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
             });
         }
         // return if old password do not match 
         bcrypt.compare(data.password, User.password).then((response) => {
             if (!response) {
                 return res.status(200).send({
-                    status: globalConstant.ERROR_STATUS,
-                    message: globalConstant.PASSWORD_NOT_MATCH_ERROR_MESSAGE.replace('_LABEL_NAME', 'Old')
+                    status: GLOBAL_MESSAGES.ERROR_STATUS,
+                    message: GLOBAL_MESSAGES.PASSWORD_NOT_MATCH_ERROR_MESSAGE.replace('_LABEL_NAME', 'Old')
                 })
             }
 
@@ -494,21 +571,21 @@ exports.changePassword = (req, res) => {
                     // if error occur while saving new password
                     if (err) {
                         return res.status(200).send({
-                            status: globalConstant.ERROR_STATUS,
-                            message: globalConstant.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Changing Password')
+                            status: GLOBAL_MESSAGES.ERROR_STATUS,
+                            message: GLOBAL_MESSAGES.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Changing Password')
                         })
                     }
                     // if updated user data not found
                     if (!PasswordUpdated) {
                         return res.status(200).send({
-                            status: globalConstant.ERROR_STATUS,
-                            message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
+                            status: GLOBAL_MESSAGES.ERROR_STATUS,
+                            message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
                         });
                     }
                     // successfully updated new password
                     return res.status(200).send({
-                        status: globalConstant.SUCCESS_STATUS,
-                        message: globalConstant.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Password')
+                        status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                        message: GLOBAL_MESSAGES.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Password')
                     })
                 })
             })
@@ -517,6 +594,7 @@ exports.changePassword = (req, res) => {
     })
 }
 
+// todo -> Method for Reset Password
 exports.resetPassword = (req, res) => {
     let data = req.body;
     AdminUserModel.findOne({ _id: data._id }).then((User) => {
@@ -528,46 +606,47 @@ exports.resetPassword = (req, res) => {
                 // if error occur while saving new password
                 if (err) {
                     return res.status(200).send({
-                        status: globalConstant.ERROR_STATUS,
-                        message: globalConstant.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Reset Password')
+                        status: GLOBAL_MESSAGES.ERROR_STATUS,
+                        message: GLOBAL_MESSAGES.ERROR_WHILE_SAVING_MESSAGE.replace('_LABEL_NAME', 'Reset Password')
                     })
                 }
                 // if updated user data not found
                 if (!PasswordUpdated) {
                     return res.status(200).send({
-                        status: globalConstant.ERROR_STATUS,
-                        message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
+                        status: GLOBAL_MESSAGES.ERROR_STATUS,
+                        message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
                     });
                 }
                 // successfully updated new password
                 return res.status(200).send({
-                    status: globalConstant.SUCCESS_STATUS,
-                    message: globalConstant.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Password Reset')
+                    status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                    message: GLOBAL_MESSAGES.SUCCESSFULLY_SAVED_MESSAGE.replace('_LABEL_NAME', 'Password Reset')
                 })
             })
         })
     })
 }
 
+// todo -> Method to get profile data of user
 exports.getProfile = (req, res) => {
-    let data = req.body;
-    AdminUserModel.findOne({ _id: data._id }).select('email name mobile_number is_super_admin creator permissions').then((User) => {
+    AdminUserModel.findOne({ _id: req.body._id }).select('email name mobile_number is_super_admin creator permissions').then((User) => {
         // if User NOT FOUND
         if (!User) {
             return res.status(200).send({
-                status: globalConstant.ERROR_STATUS,
-                message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
             });
         } else {
             return res.status(200).send({
-                status: globalConstant.SUCCESS_STATUS,
+                status: GLOBAL_MESSAGES.SUCCESS_STATUS,
                 data: User,
-                message: globalConstant.DATA_FOUND_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'User')
+                message: GLOBAL_MESSAGES.DATA_FOUND_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'User')
             })
         }
     })
 }
 
+// todo -> Method to update User Profile
 exports.updateMyProfile = (req, res) => {
     let userId = req.userId;
     let data = req.body;
@@ -577,8 +656,8 @@ exports.updateMyProfile = (req, res) => {
         // if user NOT FOUND
         if (!AdminUserData) {
             return res.status(200).send({
-                status: globalConstant.ERROR_STATUS,
-                message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'User')
             });
         }
 
@@ -591,16 +670,16 @@ exports.updateMyProfile = (req, res) => {
             // got error while updating admin user
             if (err) {
                 return res.status(200).send({
-                    status: globalConstant.ERROR_STATUS,
+                    status: GLOBAL_MESSAGES.ERROR_STATUS,
                     data: err,
-                    message: globalConstant.ERROR_WHILE_UPDATING_MESSAGE.replace('_LABEL_NAME', 'Admin')
+                    message: GLOBAL_MESSAGES.ERROR_WHILE_UPDATING_MESSAGE.replace('_LABEL_NAME', 'Admin')
                 });
             }
             // data of saved admin user not found
             if (!AdminUpdated) {
                 return res.status(200).send({
-                    status: globalConstant.ERROR_STATUS,
-                    message: globalConstant.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Admin')
+                    status: GLOBAL_MESSAGES.ERROR_STATUS,
+                    message: GLOBAL_MESSAGES.SAVED_DATA_NOT_FOUND_ERROR_MESSAGE.replace('_LABEL_NAME', 'Admin')
                 });
             }
             let data = {
@@ -614,8 +693,8 @@ exports.updateMyProfile = (req, res) => {
             // successfully updated admin
             return res.status(200).send({
                 data: data,
-                status: globalConstant.SUCCESS_STATUS,
-                message: globalConstant.FIELD_UPDATED_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Admin')
+                status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+                message: GLOBAL_MESSAGES.FIELD_UPDATED_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Admin')
             });
         })
     })

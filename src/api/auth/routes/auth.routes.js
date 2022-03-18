@@ -12,8 +12,9 @@ api.post('/reset-password', AuthController.resetPassword)
 api.get('/have-super-admin', AuthController.haveSuperAdmin)
 
 
-api.post('/admin-signup', AuthController.adminSignup);
+api.post('/admin-signup',verifyToken, AuthController.adminSignup);
 api.post('/change-password',verifyToken, AuthController.changePassword);
+api.get('/get-sub-admins',verifyToken, AuthController.getSubAdmins);
 api.post('/update-my-profile',verifyToken, AuthController.updateMyProfile);
 api.post('/get-permissions',verifyToken, AuthController.getPermissionsList);
 api.post('/update-permissions',verifyToken, AuthController.updatePermissions);
