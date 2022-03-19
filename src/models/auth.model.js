@@ -62,7 +62,7 @@ const AdminUserSchema = mongoose.Schema({
         ref: 'AdminUser',
         required: false,
         default : null
-    },
+    },  
     permissions : [{
         type : PermissionsSchema,
         default : []

@@ -22,3 +22,4 @@ exports.ERROR_PROVIDE_CREATOR_OF_SUB_ADMIN_MESSAGE = 'Please provide creator for
 exports.MAIL_SEND_SUCCESSFULLY_MESSAGE = '_LABEL_NAME mail send successfully';
 exports.ERROR_WHILE_MAIL_SEND_MESSAGE = 'Got error while sending _LABEL_NAME mail.';
 exports.CONTACT_SUPER_ADMIN_ERROR_MESSAGE = 'Contact you super admin for _LABEL_NAME';
+exports.SUCCESSFULLY_REMOVED_DATA_MESSAGE = '_LABEL_NAME removed successfully.';

@@ -4,8 +4,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
-const { verifyToken } = require('./src/api/auth/middlewares/auth-verification');
-const auth_routes = require('./src/api/auth/routes/auth.routes');
+const { verifyToken } = require('./src/middlewares/auth-verification');
+const auth_routes = require('./src/routes/auth.routes');
 
 // ------------------------------------------------------------------
 

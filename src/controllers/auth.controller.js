@@ -1,9 +1,9 @@
 'use strict'
 const { AdminUserModel } = require('../models/auth.model');
 const { secret } = require('../config/auth.config');
-const GLOBAL_CONSTANT = require('../../../../_global/global');
-const GLOBAL_MESSAGES = require('../../../../_global/global.messages')
-const GLOBAL_MAIL = require('../../../../_global/global.mail')
+const GLOBAL_CONSTANT = require('../../_global/global');
+const GLOBAL_MESSAGES = require('../../_global/global.messages')
+const GLOBAL_MAIL = require('../../_global/global.mail')
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -368,7 +368,7 @@ exports.getSubAdmins = (req, res) => {
 exports.getPermissionsList = (req, res) => {
     let data = req.body;
 
-    AdminUserModel.findOne({ _id: data._id ? data._id : req.userId }).then((AdminUserData) => {
+    AdminUserModel.findOne({ _id: data._id ? data._id : req.userId }).select('permissions').then((AdminUserData) => {
         // if user NOT FOUND
         if (!AdminUserData) {
             return res.status(200).send({
@@ -377,26 +377,9 @@ exports.getPermissionsList = (req, res) => {
             });
         }
 
-        let permissions = [];
-        permissions = AdminUserData.permissions;
-
-        if (permissions.length == 0) {
-            // loop over the static routes and create permissions
-            for (let route of GLOBAL_MESSAGES.PERMISSIONS) {
-                let tempPermission = {
-                    component_route: route,
-                    create_action: false,
-                    update_action: false,
-                    read_action: false,
-                    delete_action: false
-                }
-                permissions.push(tempPermission);
-            }
-        }
-
         if (AdminUserData) {
             return res.status(200).send({
-                data: permissions,
+                data: AdminUserData.permissions,
                 status: GLOBAL_MESSAGES.SUCCESS_STATUS,
                 message: GLOBAL_MESSAGES.DATA_FOUND_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Permissions')
             });

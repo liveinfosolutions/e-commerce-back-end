@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/auth.config');
-const GLOBAL_MESSAGES = require('../../../../_global/global.messages');
+const GLOBAL_MESSAGES = require('../../_global/global.messages');
 
 exports.verifyToken = (req, res, next) => {
     // get token from the request

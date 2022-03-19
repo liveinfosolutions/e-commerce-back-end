@@ -8,7 +8,8 @@ const { verifyToken } = require('../middlewares/auth-verification');
 api.post('/admin-login', AuthController.adminLogin)
 api.post('/forgot-password', AuthController.forgotPassword)
 api.post('/reset-password', AuthController.resetPassword)
-// NOT IN USE CURRENTLY
+
+// ! NOT IN USE CURRENTLY
 api.get('/have-super-admin', AuthController.haveSuperAdmin)
 
 
