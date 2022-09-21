@@ -1,56 +1,54 @@
-const { VendorModel } = require("../models/vendor.model");
 const bcrypt = require('bcrypt');
-const { GOT_ERROR, DATA_NOT_FOUND_ERROR, DATA_SAVED_SUCCESSFULLY, DATA_UPDATED_SUCCESSFULLY, PASSWORD_NOT_MATCH, DATA_REMOVED_SUCCESSFULLY } = require("../../_global/global-request-responses");
+const { DATA_REMOVED_SUCCESSFULLY, GOT_ERROR, DATA_NOT_FOUND_ERROR, DATA_UPDATED_SUCCESSFULLY, PASSWORD_NOT_MATCH, DATA_SAVED_SUCCESSFULLY } = require('../../_global/global-request-responses');
+const { CustomerModel } = require('../models/customer.model');
 
-exports.addVendor = (req, res) => {
+exports.addCustomer = (req, res) => {
     let data = req.body;
 
     bcrypt.hash(data.password, 10).then((hash) => {
-        let vendor = new VendorModel();
-        vendor.first_name = data.first_name;
-        vendor.last_name = data.last_name;
-        vendor.email = data.email;
-        vendor.mobile_number = data.mobile_number;
-        vendor.password = hash;
+        let customer = new CustomerModel();
+        customer.name = data.name;
+        customer.email = data.email;
+        customer.mobile_number = data.mobile_number;
+        customer.password = hash;
 
-        vendor.save((err, SavedVendor) => {
+        customer.save((err, SavedVendor) => {
             if (err) {
-                GOT_ERROR(res, 'vendor');
+                GOT_ERROR(res, 'customer');
             }
 
             if (!SavedVendor) {
-                DATA_NOT_FOUND_ERROR(res, 'vendor')
+                DATA_NOT_FOUND_ERROR(res, 'customer')
             }
 
             // send response of successfully saved data
-            DATA_SAVED_SUCCESSFULLY(res, 'vendor')
+            DATA_SAVED_SUCCESSFULLY(res, 'customer')
         })
 
     });
 }
 
-exports.updateVendor = (req, res) => {
+exports.updateCustomer = (req, res) => {
     let data = req.data;
     let id = data._id ? data._id : req.userId;
 
     let updateObject = {
-        first_name: data.first_name,
-        last_name: data.last_name,
+        name: data.name,
         email: data.email,
         mobile_number: data.mobile_number
     }
 
-    VendorModel.findOneAndUpdate({ _id: id }, { updateObject }, (err, UpdatedVendor) => {
+    CustomerModel.findOneAndUpdate({ _id: id }, { updateObject }, (err, UpdatedCustomer) => {
         if (err) {
-            GOT_ERROR(res, 'updating vendor');
+            GOT_ERROR(res, 'updating customer');
         }
 
-        if (!UpdatedVendor) {
-            DATA_NOT_FOUND_ERROR(res, 'updated vendor')
+        if (!UpdatedCustomer) {
+            DATA_NOT_FOUND_ERROR(res, 'updated customer')
         }
 
         // send response of successfully saved data
-        DATA_UPDATED_SUCCESSFULLY(res, 'vendor')
+        DATA_UPDATED_SUCCESSFULLY(res, 'customer')
     })
 }
 
@@ -58,15 +56,15 @@ exports.changePassword = (req,res) => {
     let data = req.body;
     let id = data._id ? data._id : req.userId;
 
-    VendorModel.findOne({ _id: id }).then(User => {
+    CustomerModel.findOne({ _id: id }).then(User => {
         // return if user not found
         if (!User) {
-            DATA_NOT_FOUND_ERROR(res, 'vendor')
+            DATA_NOT_FOUND_ERROR(res, 'customer')
         }
         // return if old password do not match 
         bcrypt.compare(data.password, User.password).then((response) => {
             if (!response) {
-                PASSWORD_NOT_MATCH(req,'vendor')
+                PASSWORD_NOT_MATCH(req,'customer')
             }
 
             // convert password to hash
@@ -76,11 +74,11 @@ exports.changePassword = (req,res) => {
                 User.save((err, PasswordUpdated) => {
                     // if error occur while saving new password
                     if (err) {
-                       GOT_ERROR(res,'vendor change password')
+                       GOT_ERROR(res,'customer change password')
                     }
                     // if updated user data not found
                     if (!PasswordUpdated) {
-                       DATA_NOT_FOUND_ERROR(res,'updated vendor')
+                       DATA_NOT_FOUND_ERROR(res,'updated customer')
                     }
                     // successfully updated new password
                     DATA_UPDATED_SUCCESSFULLY(res,'Password');                   
@@ -91,15 +89,15 @@ exports.changePassword = (req,res) => {
     })
 }
 
-// todo -> Method to delete vendor
-exports.removeVendor = (req,res) =>{
+// todo -> Method to delete customer
+exports.removeCustomer = (req,res) =>{
     let id = req.body._id;
 
-  VendorModel.findByIdAndDelete(id, (err, deleted) => {
+  CustomerModel.findByIdAndDelete(id, (err, deleted) => {
     if (err) {
-      GOT_ERROR(res, "removing vendor");
+      GOT_ERROR(res, "removing customer");
     } else {
-      DATA_REMOVED_SUCCESSFULLY(res, "vendor");
+      DATA_REMOVED_SUCCESSFULLY(res, "customer");
     }
   });
 }

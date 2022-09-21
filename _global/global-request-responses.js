@@ -41,6 +41,15 @@ exports.DATA_REMOVED_SUCCESSFULLY = (res,replace_LABEL_NAME_text) => {
     });
 }
 
+// todo -> Successfully send data ( SUCCESS )
+exports.SEND_DATA = (res,data,replace_LABEL_NAME_text) => {
+    return res.status(200).send({
+        status: GLOBAL_MESSAGES.SUCCESS_STATUS,
+        data : data,
+        message: GLOBAL_MESSAGES.DATA_FOUND_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', replace_LABEL_NAME_text)
+    });
+}
+
 // ! Password not match (*Error Response)
 
 exports.PASSWORD_NOT_MATCH = (res,replace_LABEL_NAME_text) => {

@@ -3,15 +3,10 @@ const mongoose = require('mongoose');
 var validateEmail = function(email) {
     var re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     return re.test(email)
-};
+}; 
 
-// todo -> Schema for vendor
-const VendorSchema = mongoose.Schema({
-    first_name : {
-        type : String,
-        required : true
-    },
-    last_name : {
+const CustomerSchema = mongoose.Schema({
+    name : {
         type : String,
         required : true
     },
@@ -47,4 +42,4 @@ const VendorSchema = mongoose.Schema({
     }
 })
 
-exports.VendorModel = mongoose.model('Vendors',VendorSchema);
+exports.CustomerModel = mongoose.model('Customers',CustomerSchema);
