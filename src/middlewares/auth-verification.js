@@ -4,7 +4,7 @@ const GLOBAL_MESSAGES = require('../../_global/global.messages');
 
 exports.verifyToken = (req, res, next) => {
     // get token from the request
-    let token = req.headers["authorization"].replace('Bearer','').trim(); 
+    let token = req.headers['authorization'].replace('Bearer','').trim(); 
     
     if(req.url == '/admin-signup'){
         if(!token){

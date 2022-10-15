@@ -1,142 +1,121 @@
-const { CategoryModel, SubCategoryModel } = require("../models/category.model");
+//------------------------------------------IMPORTS-------------------------------
+const { CategoryModel, SubCategoryModel } = require('../models/category.model');
 const {
   GOT_ERROR,
   DATA_NOT_FOUND_ERROR,
   DATA_SAVED_SUCCESSFULLY,
   DATA_UPDATED_SUCCESSFULLY,
   DATA_REMOVED_SUCCESSFULLY,
-} = require("../../_global/global-request-responses");
+} = require('../../_global/global-request-responses');
+const { DELETE_FILE } = require('../../_global/global.methods');
+//---------------------------------------------------------------------------------
 
-// * ***************************
-// ! IMAGE UPLOAD IS PENDING
-// * ***************************
-
-// todo -> Method to add new Category
+// Todo -> Method to add new Category
 exports.addCategory = (req, res) => {
   let data = req.body;
   let category = new CategoryModel();
   category.name = data.name;
-  category.image = data.image;
+  category.image = `images/categories/${req.file.filename}`;
   category.sub_category = [];
-  category.sizes = [];
+  // category.sizes = [];  // ! need logic to save sizes
 
   category.save((err, CategorySaved) => {
-    if (err) {
-      GOT_ERROR(res, "category");
-    }
+    if (err) return GOT_ERROR(res, 'category'); // !! Error
+    if (!CategorySaved) return DATA_NOT_FOUND_ERROR(res, 'category'); // !! Error
 
-    if (!CategorySaved) {
-      DATA_NOT_FOUND_ERROR(res, "category");
-    }
-    // send response of successfully saved data
-    DATA_SAVED_SUCCESSFULLY(res, "category");
+    return DATA_SAVED_SUCCESSFULLY(res, 'category');
   });
 };
 
-// todo -> Method to update Category
+// Todo -> Method to update Category
 exports.updateCategory = (req, res) => {
-  let data = req.body;
-  CategoryModel.find({ _id: data._id }, (err, Category) => {
-    Category.name = data.name;
-    Category.image = data.image;
-    // Category.sizes = data.sizes; // ! need logic to save sizes
+  const updatedData = req.body;
+  CategoryModel.find({ _id: updatedData._id }, (err, Category) => {
+    if (updatedData.image) DELETE_FILE(Category.image); // Remove old image if have new
+    Category.name = updatedData.name;
+    Category.image = `images/categories/${req.file.filename}`;
+    // Category.sizes = updatedData.sizes; // ! need logic to save sizes
 
     Category.save((err, CategoryUpdated) => {
-      if (err) {
-        GOT_ERROR(res, "updating category");
-      }
+      if (err) return GOT_ERROR(res, 'updating category'); // !! Error
+      if (!CategoryUpdated) return DATA_NOT_FOUND_ERROR(res, 'updated category');  // !! Error
 
-      if (!CategoryUpdated) {
-        DATA_NOT_FOUND_ERROR(res, "updated category");
-      }
-      // send response of successfully updated data
-      DATA_UPDATED_SUCCESSFULLY(res, "category updated");
+      return DATA_UPDATED_SUCCESSFULLY(res, 'category updated');
     });
   });
 };
 
-// todo -> Method to remove Category
+// Todo -> Method to remove Category
 exports.removeCategory = (req, res) => {
-  let id = req.body._id;
+  CategoryModel.findOne({ _id: req.body._id }, (error, CategoryData) => {
+    if (error) return GOT_ERROR(res, 'removing category'); // !! Error
+    if (!CategoryData) return DATA_NOT_FOUND_ERROR(res, 'category'); // !! Error
 
-  CategoryModel.findByIdAndDelete(id, (err, deleted) => {
-    if (err) {
-      GOT_ERROR(res, "removing category");
-    } else {
-      DATA_REMOVED_SUCCESSFULLY(res, "category");
-    }
+    DELETE_FILE(CategoryData.image); // Remove stored category image
+    CategoryModel.findByIdAndDelete(id, (err, deleted) => {
+      if (err) return GOT_ERROR(res, 'removing category');  // !! Error
+
+      return DATA_REMOVED_SUCCESSFULLY(res, 'category');
+    });
   });
 };
 
-// todo -> Method to add new Sub Category
+// Todo -> Method to add new Sub Category
 exports.addSubCategory = (req, res) => {
   let data = req.body;
 
-  CategoryModel.findById(data.category_id, (err, CategoryData) => {
-    if (err) {
-      GOT_ERROR(res, "category");
-    }
+  CategoryModel.findById(data.category, (err, CategoryData) => {
+    if (err) return GOT_ERROR(res, 'category'); // !! Error
+    if (!CategoryData) return DATA_NOT_FOUND_ERROR(res, 'category'); // !! Error
 
-    if (!CategoryData) {
-      DATA_NOT_FOUND_ERROR(res, "category");
-    }
+    let subCategory = new SubCategoryModel();
+    subCategory.name = data.name;
+    subCategory.image = `images/sub-categories/${req.file.filename}`;
+    // subCategory.sizes = [];  // ! need logic to save sizes
+    subCategory.category = data.category;
 
-    CategoryData.sub_category.push(data.sub_category);
+    subCategory.save((err, subCategorySaved) => {
+      if (err) return GOT_ERROR(res, 'sub category'); // !! Error
+      if (!subCategorySaved) return DATA_NOT_FOUND_ERROR(res, 'sub category'); // !! Error
 
-    CategoryData.save((err, subCategorySaved) => {
-      if (err) {
-        GOT_ERROR(res, "sub category");
-      }
-
-      if (!subCategorySaved) {
-        DATA_NOT_FOUND_ERROR(res, "sub category");
-      }
-      // send response of successfully saved data
-      DATA_SAVED_SUCCESSFULLY(res, "sub category");
+      return DATA_SAVED_SUCCESSFULLY(res, 'sub category');
     });
   });
 };
 
-// todo -> Method to update Category
+// Todo -> Method to update Category
 exports.updateSubCategory = (req, res) => {
-  let data = req.body;
-  SubCategoryModel.findById(data._id, (err, SubCategoryData) => {
-    if (err) {
-      GOT_ERROR(res, "category");
-    }
+  let updatedData = req.body;
+  SubCategoryModel.findById(updatedData._id, (err, SubCategoryData) => {
+    if (err) return GOT_ERROR(res, 'category'); // !! Error
+    if (!SubCategoryData) return DATA_NOT_FOUND_ERROR(res, 'sub category'); // !! Error
+    if (updatedData.image) DELETE_FILE(SubCategoryData.image); // Remove old image if have new
 
-    if (!SubCategoryData) {
-      DATA_NOT_FOUND_ERROR(res, "sub category");
-    }
-
-    SubCategoryData.name = data.name;
-    SubCategoryData.image = data.image;
-    // SubCategoryData.sizes = data.sizes; // ! need logic for this
+    SubCategoryData.name = updatedData.name;
+    SubCategoryData.image = `images/sub-categories/${req.file.filename}`;
+    // SubCategoryData.sizes = updatedData.sizes; // ! need logic for this
 
     SubCategoryData.save((err, SubCategoryUpdatedData) => {
-      if (err) {
-        GOT_ERROR(res, "category");
-      }
+      if (err) return GOT_ERROR(res, 'category'); // !! Error
+      if (!SubCategoryUpdatedData) return DATA_NOT_FOUND_ERROR(res, 'updated sub category'); // !! Error
 
-      if (!SubCategoryUpdatedData) {
-        DATA_NOT_FOUND_ERROR(res, "updated sub category");
-      }
-
-      // send response of successfully updated data
-      DATA_UPDATED_SUCCESSFULLY(res, "sub category updated");
+      return DATA_UPDATED_SUCCESSFULLY(res, 'sub-category updated');
     });
   });
 };
 
-// todo -> Method to remove Sub Category
+// Todo -> Method to remove Sub Category
 exports.removeSubCategory = (req, res) => {
   let id = req.body._id;
+  SubCategoryModel.findOne({ _id: req.body._id }, (error, subCategoryData) => {
+    if (error) return GOT_ERROR(res, 'removing sub-category'); // !! Error
+    if (!CategoryData) return DATA_NOT_FOUND_ERROR(res, 'sub-category'); // !! Error
 
-  SubCategoryModel.findByIdAndDelete(id, (err, deleted) => {
-    if (err) {
-      GOT_ERROR(res, "removing sub category");
-    } else {
-      DATA_REMOVED_SUCCESSFULLY(res, "sub category");
-    }
+    DELETE_FILE(subCategoryData.image); // Remove stored sub-category image
+    SubCategoryModel.findByIdAndDelete(id, (err, deleted) => {
+      if (err) return GOT_ERROR(res, 'removing sub category'); // !! Error
+
+      return DATA_REMOVED_SUCCESSFULLY(res, 'sub category');
+    });
   });
 };

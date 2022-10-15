@@ -5,7 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
 const { verifyToken } = require('./src/middlewares/auth-verification');
-const auth_routes = require('./src/routes/auth.routes');
+const indexRoutes = require('./src/routes/index.routes');
 
 // ------------------------------------------------------------------
 
@@ -26,7 +26,7 @@ app.use(bodyParser.urlencoded({
 }))
 
 app.use(bodyParser.json({
-    limit: "100mb"
+    limit: '100mb'
 }));
 
 // Handle Cors Error
@@ -46,7 +46,10 @@ app.use(cors());
 app.use('/images',express.static(path.join('assets/images')))
 app.use('/files',express.static(path.join('assets/files')))
 
-app.use('/api',auth_routes);
+///////////////////////////////////
+// ** Routes
+///////////////////////////////////
+app.use('/api', indexRoutes);
 
 // Verify token on every post request
 app.post('*',verifyToken,(req,res,next)=>{

@@ -12,6 +12,7 @@ exports.SUCCESSFULLY_SAVED_MESSAGE = '_LABEL_NAME saved successfully';
 exports.SUCCESSFULLY_LOGGED_IN_MESSAGE = '_LABEL_NAME logged In successfully';
 exports.PASSWORD_NOT_MATCH_ERROR_MESSAGE = '_LABEL_NAME password did not match';
 exports.NOT_AUTHORIZED_USER_ERROR_MESSAGE = 'NOT Authorized';
+exports.NOT_ALLOWED_ERROR_MESSAGE = 'You do not have permission for this action.';
 exports.NOT_FOUND_MESSAGE = '_LABEL_NAME not found';
 exports.DATA_FOUND_SUCCESSFULLY_MESSAGE = '_LABEL_NAME found successfully';
 exports.UNIDENTIFIED_ERROR_MESSAGE = 'got error in _LABEL_NAME';

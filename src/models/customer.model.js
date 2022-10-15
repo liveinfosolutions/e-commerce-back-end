@@ -1,45 +1,15 @@
+//------------------------------------------IMPORTS--------------------------------
+'use strict'
 const mongoose = require('mongoose');
-
-var validateEmail = function(email) {
-    var re = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-    return re.test(email)
-}; 
+const { SchemaStatusPropertyEnum, StatusActive, EmailAddressValidation, MobileNumberValidation } = require('./common/shared-btw-models');
+//---------------------------------------------------------------------------------
 
 const CustomerSchema = mongoose.Schema({
-    name : {
-        type : String,
-        required : true
-    },
-    email : {
-        type: String,
-        trim: true,
-        lowercase: true,
-        unique: true,
-        required: 'Email address is required',
-        validate: [validateEmail, 'Please fill a valid email address'],
-        match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
-    },
-    mobile_number : {
-        type: Number,
-        validate: {
-            validator: function(v) {
-                return /d{10}/.test(v);
-            },
-            message: '{VALUE} is not a valid 10 digit number!'
-        }
-    },
-    password : {
-        type : String,
-        required : true
-    },
-    status : {
-        type : String,
-        enum: {
-            values: ['Active','Inactive'],
-            message: '{VALUE} is not supported'
-          },
-        default : 'Active'
-    }
-})
+    name: { type: String, required: true },
+    email: EmailAddressValidation,
+    mobile_number: MobileNumberValidation,
+    password: { type: String, required: true },
+    status: { type: String, enum: SchemaStatusPropertyEnum, default: StatusActive }
+}, { timestamps: true });
 
-exports.CustomerModel = mongoose.model('Customers',CustomerSchema);
+exports.CustomerModel = mongoose.model('Customers', CustomerSchema);

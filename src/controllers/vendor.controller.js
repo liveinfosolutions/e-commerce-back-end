@@ -1,6 +1,8 @@
-const { VendorModel } = require("../models/vendor.model");
+//------------------------------------------IMPORTS-------------------------------
+const { VendorModel } = require('../models/vendor.model');
 const bcrypt = require('bcrypt');
-const { GOT_ERROR, DATA_NOT_FOUND_ERROR, DATA_SAVED_SUCCESSFULLY, DATA_UPDATED_SUCCESSFULLY, PASSWORD_NOT_MATCH, DATA_REMOVED_SUCCESSFULLY } = require("../../_global/global-request-responses");
+const { GOT_ERROR, DATA_NOT_FOUND_ERROR, DATA_SAVED_SUCCESSFULLY, DATA_UPDATED_SUCCESSFULLY, PASSWORD_NOT_MATCH, DATA_REMOVED_SUCCESSFULLY } = require('../../_global/global-request-responses');
+//--------------------------------------------------------------------------------
 
 exports.addVendor = (req, res) => {
     let data = req.body;
@@ -15,15 +17,15 @@ exports.addVendor = (req, res) => {
 
         vendor.save((err, SavedVendor) => {
             if (err) {
-                GOT_ERROR(res, 'vendor');
+                return GOT_ERROR(res, 'vendor');
             }
 
             if (!SavedVendor) {
-                DATA_NOT_FOUND_ERROR(res, 'vendor')
+                return DATA_NOT_FOUND_ERROR(res, 'vendor')
             }
 
             // send response of successfully saved data
-            DATA_SAVED_SUCCESSFULLY(res, 'vendor')
+            return DATA_SAVED_SUCCESSFULLY(res, 'vendor')
         })
 
     });
@@ -42,31 +44,31 @@ exports.updateVendor = (req, res) => {
 
     VendorModel.findOneAndUpdate({ _id: id }, { updateObject }, (err, UpdatedVendor) => {
         if (err) {
-            GOT_ERROR(res, 'updating vendor');
+            return GOT_ERROR(res, 'updating vendor');
         }
 
         if (!UpdatedVendor) {
-            DATA_NOT_FOUND_ERROR(res, 'updated vendor')
+            return DATA_NOT_FOUND_ERROR(res, 'updated vendor')
         }
 
         // send response of successfully saved data
-        DATA_UPDATED_SUCCESSFULLY(res, 'vendor')
+        return DATA_UPDATED_SUCCESSFULLY(res, 'vendor')
     })
 }
 
-exports.changePassword = (req,res) => {
+exports.changePassword = (req, res) => {
     let data = req.body;
     let id = data._id ? data._id : req.userId;
 
     VendorModel.findOne({ _id: id }).then(User => {
         // return if user not found
         if (!User) {
-            DATA_NOT_FOUND_ERROR(res, 'vendor')
+            return DATA_NOT_FOUND_ERROR(res, 'vendor')
         }
         // return if old password do not match 
         bcrypt.compare(data.password, User.password).then((response) => {
             if (!response) {
-                PASSWORD_NOT_MATCH(req,'vendor')
+                return PASSWORD_NOT_MATCH(req, 'vendor')
             }
 
             // convert password to hash
@@ -76,14 +78,14 @@ exports.changePassword = (req,res) => {
                 User.save((err, PasswordUpdated) => {
                     // if error occur while saving new password
                     if (err) {
-                       GOT_ERROR(res,'vendor change password')
+                        return GOT_ERROR(res, 'vendor change password')
                     }
                     // if updated user data not found
                     if (!PasswordUpdated) {
-                       DATA_NOT_FOUND_ERROR(res,'updated vendor')
+                        return DATA_NOT_FOUND_ERROR(res, 'updated vendor')
                     }
                     // successfully updated new password
-                    DATA_UPDATED_SUCCESSFULLY(res,'Password');                   
+                    return DATA_UPDATED_SUCCESSFULLY(res, 'Password');
                 })
             })
         })
@@ -92,14 +94,14 @@ exports.changePassword = (req,res) => {
 }
 
 // todo -> Method to delete vendor
-exports.removeVendor = (req,res) =>{
+exports.removeVendor = (req, res) => {
     let id = req.body._id;
 
-  VendorModel.findByIdAndDelete(id, (err, deleted) => {
-    if (err) {
-      GOT_ERROR(res, "removing vendor");
-    } else {
-      DATA_REMOVED_SUCCESSFULLY(res, "vendor");
-    }
-  });
+    VendorModel.findByIdAndDelete(id, (err, deleted) => {
+        if (err) {
+            return GOT_ERROR(res, 'removing vendor');
+        } else {
+            return DATA_REMOVED_SUCCESSFULLY(res, 'vendor');
+        }
+    });
 }

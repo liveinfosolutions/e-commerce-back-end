@@ -1,7 +1,7 @@
 //------------------------IMPORTS-----------------------------------
-const app = require("./server");
-const debug = require("debug")("node-angular");
-const http = require("http");
+const app = require('./server');
+const debug = require('debug')('node-angular');
+const http = require('http');
 // ------------------------------------------------------------------
 
 
@@ -9,8 +9,8 @@ const http = require("http");
 // Method to display the Port address on which server is running
 const onListening = () => {
   const addr = server.address();
-  const bind = typeof port === "string" ? "pipe " + port : "port " + port;
-  debug("Listening on " + bind);
+  const bind = typeof port === 'string' ? 'pipe ' + port : 'port ' + port;
+  debug('Listening on ' + bind);
 };
 
 // Method to Handle valid Port
@@ -32,17 +32,17 @@ const normalizePort = val => {
 
 // Method to handle Error Output
 const onError = error => {
-  if (error.syscall !== "listen") {
+  if (error.syscall !== 'listen') {
     throw error;
   }
-  const bind = typeof port === "string" ? "pipe " + port : "port " + port;
+  const bind = typeof port === 'string' ? 'pipe ' + port : 'port ' + port;
   switch (error.code) {
-    case "EACCES": // If Access is denied
-      console.error(bind + " requires elevated privileges");
+    case 'EACCES': // If Access is denied
+      console.error(bind + ' requires elevated privileges');
       process.exit(1);
       break;
-    case "EADDRINUSE": // If Address already in use
-      console.error(bind + " is already in use");
+    case 'EADDRINUSE': // If Address already in use
+      console.error(bind + ' is already in use');
       process.exit(1);
       break;
     default:
@@ -52,15 +52,15 @@ const onError = error => {
 
 
 // Set the default Port on which server will run
-const port = normalizePort(process.env.PORT || "3000");
-app.set("port", port);
+const port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
 
 // Create Application Server
 const server = http.createServer(app);
 // Handle the error event
-server.on("error", onError);
+server.on('error', onError);
 // Handle the listening event
-server.on("listening", onListening);
+server.on('listening', onListening);
 server.listen(port, () => {
   console.log('Server running on => http://localhost:' + port);
 });

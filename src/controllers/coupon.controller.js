@@ -1,5 +1,7 @@
-const { GOT_ERROR, DATA_NOT_FOUND_ERROR, DATA_SAVED_SUCCESSFULLY, DATA_UPDATED_SUCCESSFULLY, DATA_REMOVED_SUCCESSFULLY, SEND_DATA } = require("../../_global/global-request-responses");
-const { CouponModel } = require("../models/coupon.model");
+//------------------------------------------IMPORTS-------------------------------
+const { GOT_ERROR, DATA_NOT_FOUND_ERROR, DATA_SAVED_SUCCESSFULLY, DATA_UPDATED_SUCCESSFULLY, DATA_REMOVED_SUCCESSFULLY, SEND_DATA } = require('../../_global/global-request-responses');
+const { CouponModel } = require('../models/coupon.model');
+//--------------------------------------------------------------------------------
 
 // todo -> Method to add new Coupon
 exports.addCoupon = (req, res) => {
@@ -14,14 +16,14 @@ exports.addCoupon = (req, res) => {
 
   coupon.save((err, CouponSaved) => {
     if (err) {
-      GOT_ERROR(res, "coupon");
+      return GOT_ERROR(res, 'coupon');
     }
 
     if (!CouponSaved) {
-      DATA_NOT_FOUND_ERROR(res, "coupon");
+      return DATA_NOT_FOUND_ERROR(res, 'coupon');
     }
     // send response of successfully saved data
-    DATA_SAVED_SUCCESSFULLY(res, "coupon");
+    return DATA_SAVED_SUCCESSFULLY(res, 'coupon');
   });
 };
 
@@ -43,55 +45,55 @@ exports.updateCoupon = (req, res) => {
     { updateObject },
     (err, UpdatedCoupon) => {
       if (err) {
-        GOT_ERROR(res, "updating coupon");
+        return GOT_ERROR(res, 'updating coupon');
       }
 
       if (!UpdatedCoupon) {
-        DATA_NOT_FOUND_ERROR(res, "updated coupon");
+        return DATA_NOT_FOUND_ERROR(res, 'updated coupon');
       }
 
       // send response of successfully saved data
-      DATA_UPDATED_SUCCESSFULLY(res, "coupon");
+      return DATA_UPDATED_SUCCESSFULLY(res, 'coupon');
     }
   );
 };
 
 // todo -> Method to delete coupon
-exports.removeCoupon = (req,res) =>{
-    let id = req.body._id;
+exports.removeCoupon = (req, res) => {
+  let id = req.body._id;
 
   CouponModel.findByIdAndDelete(id, (err, deleted) => {
     if (err) {
-      GOT_ERROR(res, "removing category");
+      return GOT_ERROR(res, 'removing category');
     } else {
-      DATA_REMOVED_SUCCESSFULLY(res, "category");
+      return DATA_REMOVED_SUCCESSFULLY(res, 'category');
     }
   });
 }
 
 // todo -> Method to get coupons
-exports.getCoupon = (req,res) => {
-    let coupon_id = req.body._id;
+exports.getCoupon = (req, res) => {
+  let coupon_id = req.body._id;
 
-    if(coupon_id){
-        CouponModel.findById({_id : coupon_id},(err,Coupon)=>{  
-            if(err){
-                GOT_ERROR(res, "coupon");
-            }
+  if (coupon_id) {
+    CouponModel.findById({ _id: coupon_id }, (err, Coupon) => {
+      if (err) {
+        return GOT_ERROR(res, 'coupon');
+      }
 
-            if(!Coupon){
-                DATA_NOT_FOUND_ERROR(res, "coupon");
-            }
+      if (!Coupon) {
+        return DATA_NOT_FOUND_ERROR(res, 'coupon');
+      }
 
-            SEND_DATA(res,Coupon,"coupon");
-          })
-    }else{
-        CouponModel.find().then(Coupons => {
-            if(!Coupons){
-                DATA_NOT_FOUND_ERROR(res, "coupons");
-            }
+      return SEND_DATA(res, Coupon, 'coupon');
+    })
+  } else {
+    CouponModel.find().then(Coupons => {
+      if (!Coupons) {
+        return DATA_NOT_FOUND_ERROR(res, 'coupons');
+      }
 
-            SEND_DATA(res,Coupons,"coupons");
-        })
-    }
+      return SEND_DATA(res, Coupons, 'coupons');
+    })
+  }
 }
