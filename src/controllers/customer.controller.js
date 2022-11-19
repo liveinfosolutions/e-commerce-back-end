@@ -54,44 +54,40 @@ exports.updateCustomer = (req, res) => {
     })
 }
 
+// ? ---------------------------------CHANGE PASSWORD API ---------------------------------
 exports.changeCustomerPassword = (req, res) => {
-    let data = req.body;
-    let id = data._id ? data._id : req.userId;
+    const data = req.body;
+    const id = data._id ? data._id : req.userId;
 
     CustomerModel.findOne({ _id: id }).then(User => {
-        // return if user not found
-        if (!User) {
-            return DATA_NOT_FOUND_ERROR(res, 'customer')
-        }
+        if (!User) return DATA_NOT_FOUND_ERROR(res, 'customer');
         // return if old password do not match 
-        bcrypt.compare(data.password, User.password).then((response) => {
-            if (!response) {
-                return PASSWORD_NOT_MATCH(req, 'customer')
-            }
-
-            // convert password to hash
-            bcrypt.hash(data.new_password, 10).then((hash) => {
-                User.password = hash;
-                // save the updated user with new password
-                User.save((err, PasswordUpdated) => {
-                    // if error occur while saving new password
-                    if (err) {
-                        return GOT_ERROR(res, 'customer change password')
-                    }
-                    // if updated user data not found
-                    if (!PasswordUpdated) {
-                        return DATA_NOT_FOUND_ERROR(res, 'updated customer')
-                    }
-                    // successfully updated new password
-                    return DATA_UPDATED_SUCCESSFULLY(res, 'Password');
-                })
-            })
-        })
-
-    })
+        isPasswordMached(res, data, User);
+    });
 }
 
-// todo -> Method to delete customer
+// Controller's Main Method // ! Used in changeCustomerPassword Controller
+function isPasswordMached(res, data, User) {
+    bcrypt.compare(data.password, User.password).then((response) => {
+        if (!response) return PASSWORD_NOT_MATCH(res, 'customer');
+
+        // convert password to hashedPassword
+        bcrypt.hash(data.new_password, 10).then((hashedPassword) => {
+            User.password = hashedPassword;
+            User.save((err, PasswordUpdated) => {
+                if (err) return GOT_ERROR(res, 'customer change password');
+                if (!PasswordUpdated) return DATA_NOT_FOUND_ERROR(res, 'updated customer');
+
+                // successfully updated new password
+                return DATA_UPDATED_SUCCESSFULLY(res, 'Password');
+            });
+        });
+    });
+}
+// ? --------------------------------------------------------------------------------------
+
+
+// * Method to delete customer
 exports.removeCustomer = (req, res) => {
     let id = req.body._id;
 

@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const { EmailAddressValidation, MobileNumberValidation } = require('./common/shared-btw-models');
 //---------------------------------------------------------------------------------
 
-// todo -> About Us Schema 
+// * About Us Schema 
 const AboutUsSchema = mongoose.Schema({
     companyName: { type: String, required: true },
     logo: { type: String, required: true },

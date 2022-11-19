@@ -56,44 +56,39 @@ exports.updateVendor = (req, res) => {
     })
 }
 
+// ? ----------------------------------------CHANGE PASSWORD API ----------------------------
 exports.changePassword = (req, res) => {
-    let data = req.body;
-    let id = data._id ? data._id : req.userId;
+    const data = req.body;
+    const id = data._id ? data._id : req.userId;
 
     VendorModel.findOne({ _id: id }).then(User => {
-        // return if user not found
-        if (!User) {
-            return DATA_NOT_FOUND_ERROR(res, 'vendor')
-        }
+        if (!User) return DATA_NOT_FOUND_ERROR(res, 'vendor');
         // return if old password do not match 
         bcrypt.compare(data.password, User.password).then((response) => {
-            if (!response) {
-                return PASSWORD_NOT_MATCH(req, 'vendor')
-            }
+            if (!response) return PASSWORD_NOT_MATCH(req, 'vendor');
 
-            // convert password to hash
-            bcrypt.hash(data.new_password, 10).then((hash) => {
-                User.password = hash;
-                // save the updated user with new password
-                User.save((err, PasswordUpdated) => {
-                    // if error occur while saving new password
-                    if (err) {
-                        return GOT_ERROR(res, 'vendor change password')
-                    }
-                    // if updated user data not found
-                    if (!PasswordUpdated) {
-                        return DATA_NOT_FOUND_ERROR(res, 'updated vendor')
-                    }
-                    // successfully updated new password
-                    return DATA_UPDATED_SUCCESSFULLY(res, 'Password');
-                })
-            })
-        })
-
-    })
+            updatePassword(res, User, data);
+        });
+    });
 }
 
-// todo -> Method to delete vendor
+// Controller's Main Method // ! Used in adminSignup Controller
+function updatePassword(res, User, data) {
+    bcrypt.hash(data.new_password, 10).then((hashedPassword) => {
+        User.password = hashedPassword;
+        // save the updated user with new password
+        User.save((err, PasswordUpdated) => {
+            if (err) return GOT_ERROR(res, 'vendor change password');
+            if (!PasswordUpdated) return DATA_NOT_FOUND_ERROR(res, 'updated vendor');
+
+            // successfully updated new password
+            return DATA_UPDATED_SUCCESSFULLY(res, 'Password');
+        });
+    });
+}
+// ?------------------------------------------------------------------------------------------
+
+// * Method to delete vendor
 exports.removeVendor = (req, res) => {
     let id = req.body._id;
 

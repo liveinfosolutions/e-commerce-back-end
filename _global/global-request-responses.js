@@ -17,7 +17,7 @@ exports.DATA_NOT_FOUND_ERROR = (res, replace_LABEL_NAME_text) => {
     });
 }
 
-// todo -> If data saved successfully ( SUCCESS )
+// * If data saved successfully ( SUCCESS )
 exports.DATA_SAVED_SUCCESSFULLY = (res, replace_LABEL_NAME_text, customMessage) => {
     return res.status(200).send({
         status: GLOBAL_MESSAGES.SUCCESS_STATUS,
@@ -25,7 +25,7 @@ exports.DATA_SAVED_SUCCESSFULLY = (res, replace_LABEL_NAME_text, customMessage) 
     });
 }
 
-// todo -> If data updated successfully ( SUCCESS )
+// * If data updated successfully ( SUCCESS )
 exports.DATA_UPDATED_SUCCESSFULLY = (res, replace_LABEL_NAME_text) => {
     return res.status(200).send({
         status: GLOBAL_MESSAGES.SUCCESS_STATUS,
@@ -33,7 +33,7 @@ exports.DATA_UPDATED_SUCCESSFULLY = (res, replace_LABEL_NAME_text) => {
     });
 }
 
-// todo -> Successfully removed data ( SUCCESS )
+// * Successfully removed data ( SUCCESS )
 exports.DATA_REMOVED_SUCCESSFULLY = (res, replace_LABEL_NAME_text) => {
     return res.status(200).send({
         status: GLOBAL_MESSAGES.SUCCESS_STATUS,
@@ -41,7 +41,7 @@ exports.DATA_REMOVED_SUCCESSFULLY = (res, replace_LABEL_NAME_text) => {
     });
 }
 
-// todo -> Successfully send data ( SUCCESS )
+// * Successfully send data ( SUCCESS )
 exports.SEND_DATA = (res, data, replace_LABEL_NAME_text) => {
     return res.status(200).send({
         status: GLOBAL_MESSAGES.SUCCESS_STATUS,

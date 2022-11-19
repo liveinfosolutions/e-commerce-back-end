@@ -10,7 +10,7 @@ const {
 const { DELETE_FILE } = require('../../_global/global.methods');
 //---------------------------------------------------------------------------------
 
-// Todo -> Method to add new Category
+// * Method to add new Category
 exports.addCategory = (req, res) => {
   let data = req.body;
   let category = new CategoryModel();
@@ -27,7 +27,7 @@ exports.addCategory = (req, res) => {
   });
 };
 
-// Todo -> Method to update Category
+// * Method to update Category
 exports.updateCategory = (req, res) => {
   const updatedData = req.body;
   CategoryModel.find({ _id: updatedData._id }, (err, Category) => {
@@ -45,7 +45,7 @@ exports.updateCategory = (req, res) => {
   });
 };
 
-// Todo -> Method to remove Category
+// * Method to remove Category
 exports.removeCategory = (req, res) => {
   CategoryModel.findOne({ _id: req.body._id }, (error, CategoryData) => {
     if (error) return GOT_ERROR(res, 'removing category'); // !! Error
@@ -60,7 +60,7 @@ exports.removeCategory = (req, res) => {
   });
 };
 
-// Todo -> Method to add new Sub Category
+// * Method to add new Sub Category
 exports.addSubCategory = (req, res) => {
   let data = req.body;
 
@@ -83,7 +83,7 @@ exports.addSubCategory = (req, res) => {
   });
 };
 
-// Todo -> Method to update Category
+// * Method to update Category
 exports.updateSubCategory = (req, res) => {
   let updatedData = req.body;
   SubCategoryModel.findById(updatedData._id, (err, SubCategoryData) => {
@@ -104,7 +104,7 @@ exports.updateSubCategory = (req, res) => {
   });
 };
 
-// Todo -> Method to remove Sub Category
+// * Method to remove Sub Category
 exports.removeSubCategory = (req, res) => {
   let id = req.body._id;
   SubCategoryModel.findOne({ _id: req.body._id }, (error, subCategoryData) => {

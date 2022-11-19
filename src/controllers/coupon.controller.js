@@ -3,7 +3,7 @@ const { GOT_ERROR, DATA_NOT_FOUND_ERROR, DATA_SAVED_SUCCESSFULLY, DATA_UPDATED_S
 const { CouponModel } = require('../models/coupon.model');
 //--------------------------------------------------------------------------------
 
-// todo -> Method to add new Coupon
+// * Method to add new Coupon
 exports.addCoupon = (req, res) => {
   let data = req.body;
   let coupon = new CouponModel();
@@ -27,7 +27,7 @@ exports.addCoupon = (req, res) => {
   });
 };
 
-// todo -> Method to update coupon
+// * Method to update coupon
 exports.updateCoupon = (req, res) => {
   let data = req.data;
 
@@ -58,7 +58,7 @@ exports.updateCoupon = (req, res) => {
   );
 };
 
-// todo -> Method to delete coupon
+// * Method to delete coupon
 exports.removeCoupon = (req, res) => {
   let id = req.body._id;
 
@@ -71,7 +71,7 @@ exports.removeCoupon = (req, res) => {
   });
 }
 
-// todo -> Method to get coupons
+// * Method to get coupons
 exports.getCoupon = (req, res) => {
   let coupon_id = req.body._id;
 

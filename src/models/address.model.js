@@ -9,27 +9,27 @@ const {
 } = require('./common/shared-btw-models');
 //---------------------------------------------------------------------------------
 
-// todo -> Location Co-ordinates Schema
+// * Location Co-ordinates Schema
 const CoOrdinatesSchema = Schema({
     latitude: { type: Number, required: true },
     longitude: { type: Number, required: true }
 }, { _id: false });
 
-// todo -> Country Schema
+// * Country Schema
 const CountrySchema = mongoose.Schema({
     name: { type: String, required: true },
     status: { type: String, enum: SchemaStatusPropertyEnum, default: StatusActive }
 });
 
-// todo -> State Schema
+// * State Schema
 const StateSchema = mongoose.Schema({
     name: { type: String, required: true },
     country: { type: mongoose.Schema.Types.ObjectId, ref: 'Countries', required: true },
     status: { type: String, enum: SchemaStatusPropertyEnum, default: StatusActive }
 });
 
-// todo -> Address Schema
-export const AddressSchema = mongoose.Schema({
+// * Address Schema
+const AddressSchema = mongoose.Schema({
     country: { type: mongoose.Schema.Types.ObjectId, ref: 'Countries', required: true },
     fullName: { type: String, required: true },
     mobileNumber: MobileNumberValidation,
@@ -49,3 +49,7 @@ export const AddressSchema = mongoose.Schema({
 exports.AddressModel = mongoose.model('Addresses', AddressSchema);
 exports.CountryModel = mongoose.model('Countries', CountrySchema);
 exports.StateModel = mongoose.model('States', StateSchema);
+
+module.exports = Object.freeze({
+    AddressSchema
+});

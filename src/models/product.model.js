@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const { SchemaStatusPropertyEnum, StatusInactive, StatusActive } = require('./common/shared-btw-models');
 //---------------------------------------------------------------------------------
 
-// todo -> Variations of product like small, medium, large
+// * Variations of product like small, medium, large
 const ProductVariationSchema = mongoose.Schema({
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Products', required: true },
     unit: { type: String, required: true }, // ! Need to add unit type in subCategory Model like small, medium, large, xl
@@ -15,7 +15,7 @@ const ProductVariationSchema = mongoose.Schema({
     status: { type: String, enum: SchemaStatusPropertyEnum, default: StatusActive }
 }, { timestamps: true });
 
-// todo -> Product Review Schema
+// * Product Review Schema
 const ProductReviewSchema = mongoose.Schema({
     comment: { type: String, required: true, trim: true, },
     customer: { type: Schema.Types.ObjectId, ref: 'Customers' },
@@ -25,7 +25,7 @@ const ProductReviewSchema = mongoose.Schema({
     varient: { type: Schema.Types.ObjectId, index: true, ref: 'ProductVariations' },
 }, { timestamps: true });
 
-// todo -> Multiple Images Schema
+// * Multiple Images Schema
 const ImagesSchema = Schema({
     primary: String,
     secondary: String,
@@ -36,7 +36,7 @@ const ImagesSchema = Schema({
     image5: String,
 }, { versionKey: false, _id: false });
 
-// todo -> Product Schema
+// * Product Schema
 const ProductSchema = mongoose.Schema({
     name: { type: String, required: true },
     description: { type: String, required: true },

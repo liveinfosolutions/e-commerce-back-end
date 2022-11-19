@@ -10,7 +10,9 @@ const jwt = require('jsonwebtoken');
 const { UPGRADE_PLAN_ERROR, GOT_ERROR, DATA_NOT_FOUND_ERROR, DATA_SAVED_SUCCESSFULLY, NOT_ALLOWED_ERROR, CONTACT_SUPER_ADMIN_ERROR, DATA_UPDATED_SUCCESSFULLY } = require('../../_global/global-request-responses');
 //--------------------------------------------------------------------------------
 
-// todo -> Method for Super & Sub Admin signup
+
+// ? --------------------------------ADMIN SIGNUP API---------------------------------------------
+// * Method for Super & Sub Admin signup
 exports.adminSignup = (req, res) => {
     let data = req.body;
     if (req.userId) {
@@ -18,111 +20,144 @@ exports.adminSignup = (req, res) => {
         data.creator = req.userId;
     }
 
-    bcrypt.hash(data.password, 10).then((hash) => {
-        let newAdminUser = new AdminUserModel();
+    bcrypt.hash(data.password, 10).then((hashedPassword) => {
+        const newAdminUser = new AdminUserModel();
         newAdminUser.email = data.email.toLowerCase();
         newAdminUser.name = data.name;
         newAdminUser.mobile_number = data.mobile_number;
         newAdminUser.is_super_admin = data.is_super_admin;
-        newAdminUser.permissions = data.permissions;
+        newAdminUser.permissions = [];
         newAdminUser.creator = !data.creator ? null : data.creator;
-        newAdminUser.password = hash;
+        newAdminUser.password = hashedPassword;
 
         // To create Super Admin
         if (data.is_super_admin) {
-            // If Multiple Super Admins were not allowed
-            if (!GLOBAL_CONSTANT.MULTIPLE_SUPER_ADMINS_ALLOWED) {
-                return UPGRADE_PLAN_ERROR(res, 'Super Admin'); // ! Upgrade Plan
-            } else {
-                // Multiple Super Admins are allowed
-                AdminUserModel.find({ is_super_admin: true }).lean().then(superAdmins => {
-                    // Todo -> Create Root Super Admin
-                    if (superAdmins.length === 0) {
-                        // save new super admin user
-                        newAdminUser.save((err, SuperAdminSaved) => {
-                            if (err) return GOT_ERROR(res, err, 'Super Admin'); // ! Error                            
-                            if (!SuperAdminSaved) return DATA_NOT_FOUND_ERROR(res, 'Super Admin'); // ! Error      
-
-                            return DATA_SAVED_SUCCESSFULLY(res, 'Super Admin', 'Super admin created successfully.');
-                        })
-                    }
-                    // ! Check if user is authorized to add new admin
-                    AdminUserModel.findById({ _id: data.creator }, (err, Admin) => {
-                        if (err) return GOT_ERROR(res, err, 'Admin'); // ! Error   
-                        if (!Admin) return DATA_NOT_FOUND_ERROR(res, 'Admin'); // ! Error  
-                        if (!Admin.is_super_admin) return NOT_ALLOWED_ERROR(res, 'to add sub-admin'); // ! Error  
-                        // If admin tring to create super admin
-                        if (superAdmins.length > 0 && !data.creator) return CONTACT_SUPER_ADMIN_ERROR(res, 'to create another super admin.') // ! Error                         
-
-                        if (GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMIN_ALLOWED != 'UNLIMITED') {
-                            // Return If user already created provided numbers of super admins
-                            if (GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMINS_ALLOWED == superAdmins.length) {
-                                return UPGRADE_PLAN_ERROR(res, 'Super Admin');
-                            }
-                        }
-                        // todo -> Create new super admin
-                        if ((GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMINS_ALLOWED == 'UNLIMITED' || GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMINS_ALLOWED > superAdmins.length) && (superAdmins.length !== 0)) {
-                            newAdminUser.save((err, SuperAdminSaved) => {
-                                if (err) return GOT_ERROR(res, err, 'Super Admin'); // ! Error 
-                                if (!SuperAdminSaved) return DATA_NOT_FOUND_ERROR(res, 'Super Admin'); // ! Error  
-
-                                return DATA_SAVED_SUCCESSFULLY(res, 'Super Admin', 'Super admin created successfully.');
-                            })
-                        }
-                    });
-                }).catch(err => GOT_ERROR(res, err, 'Super Admin'));
-            }
+            signupForSuperAdmin(res, newAdminUser, data.creator);
+        } else {  // To create Sub-Admin
+            signupForAdmin(res, newAdminUser, data.creator);
         }
-        // To create Sub-Admin
-        if (!data.is_super_admin) {
-            // ! Check if user is authorized to add new admin
-            AdminUserModel.findById({ _id: data.creator }, (err, Admin) => {
-                if (!Admin) return DATA_NOT_FOUND_ERROR(res, 'Admin'); // ! Error    
-                if (!Admin.is_super_admin) return NOT_ALLOWED_ERROR(res, 'to add sub-admin'); // ! Error  
-
-                // Multiple sub-admins are not allowed
-                if (!GLOBAL_CONSTANT.MULTIPLE_SUB_ADMINS_ALLOWED) {
-                    return UPGRADE_PLAN_ERROR(res, 'Sub-Admin');
-                } else {
-                    // Multiple sub-admins are allowed
-                    AdminUserModel.find().lean().then(Admins => {
-                        let subAdmins = Admins.filter(admin => !admin.is_super_admin);
-                        let superAdmins = Admins.filter(admin => admin.is_super_admin);
-
-                        // If no Super Admin available return
-                        if (superAdmins.length == 0) {
-                            return res.status(200).send({
-                                status: GLOBAL_MESSAGES.ERROR_STATUS,
-                                message: GLOBAL_MESSAGES.ERROR_CANNOT_CREATE_SUB_ADMIN_WITHOUT_SUPER_ADMIN_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
-                            });
-                        }
-                        // if there is no creator for sub admin return
-                        if (!data.creator) return CONTACT_SUPER_ADMIN_ERROR(res, 'creation of Sub-Admin');
-
-                        if (GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED != 'UNLIMITED') {
-                            // Return If user already created provided numbers of sub-admins    
-                            if (GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED == subAdmins.length) {
-                                return UPGRADE_PLAN_ERROR(res, 'Sub-Admin');
-                            }
-                        }
-
-                        if (GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED == 'UNLIMITED' || GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED > subAdmins.length) {
-                            newAdminUser.save((err, SubAdminSaved) => {
-                                if (err) return GOT_ERROR(res, err, 'Sub-Admin'); // ! Error 
-                                if (!SubAdminSaved) return DATA_NOT_FOUND_ERROR(res, 'Sub-Admin'); // ! Error   
-
-                                return DATA_SAVED_SUCCESSFULLY(res, 'Sub-Admin', 'Sub-Admin created successfully.');
-                            })
-                        }
-                    }).catch(err => GOT_ERROR(res, err, 'Sub-Admin'));
-                }
-            })
-        }
-    })
-
+    });
+}
+// Controller's Main Method // ! Used in adminSignup Controller
+function signupForSuperAdmin(res, newAdminUser, creatorForSuperAdmin) {
+    if (!GLOBAL_CONSTANT.MULTIPLE_SUPER_ADMINS_ALLOWED) {
+        return UPGRADE_PLAN_ERROR(res, 'Super Admin'); // ! Upgrade Plan
+    } else {
+        AdminUserModel.find({ is_super_admin: true }).lean().then(superAdminsList => {
+            // * Create Root Super Admin
+            signupForRootSuperAdmin(res, superAdminsList, newAdminUser);
+            // * Create Non-Root Super Admin
+            signupForNonRootSuperAdmin(res, creatorForSuperAdmin, superAdminsList, newAdminUser);
+        }).catch(err => GOT_ERROR(res, err, 'Super Admin'));
+    }
 }
 
-// todo -> Method for Super & Sub Admin login
+// * Used in signupForSuperAdmin Method
+function signupForRootSuperAdmin(res, superAdminsList, newAdminUser) {
+    // * Create Root Super Admin
+    if (superAdminsList.length === 0) {
+        newAdminUser.save((err, SuperAdminSaved) => {
+            if (err) return GOT_ERROR(res, err, 'Super Admin'); // ! Error                            
+            if (!SuperAdminSaved) return DATA_NOT_FOUND_ERROR(res, 'Super Admin'); // ! Error      
+
+            return DATA_SAVED_SUCCESSFULLY(res, 'Super Admin', 'Super admin created successfully.');
+        });
+    }
+}
+
+// * Used in signupForSuperAdmin Method
+function signupForNonRootSuperAdmin(res, creatorForSuperAdmin, superAdminsList, newAdminUser) {
+    // ! Check if user is authorized to add new admin
+    AdminUserModel.findById({ _id: creatorForSuperAdmin }, (err, Admin) => {
+        if (err) return GOT_ERROR(res, err, 'Admin'); // ! Error   
+        if (!Admin) return DATA_NOT_FOUND_ERROR(res, 'Admin'); // ! Error  
+        if (!Admin.is_super_admin) return NOT_ALLOWED_ERROR(res, 'to add sub-admin'); // ! Error  
+        // If admin try to create super admin
+        if (superAdminsList.length > 0 && !creatorForSuperAdmin) return CONTACT_SUPER_ADMIN_ERROR(res, 'to create another super admin.'); // ! Error                         
+
+        // Return If user already created provided number of super admins
+        if (GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMIN_ALLOWED != 'UNLIMITED') {
+            if (GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMINS_ALLOWED === superAdminsList.length) {
+                return UPGRADE_PLAN_ERROR(res, 'Super Admin'); // ! Error  
+            }
+        }
+
+        createNewSuperAdmin(res, newAdminUser, superAdminsList);
+    });
+}
+
+// * Used in signupForNonRootSuperAdmin Method
+function createNewSuperAdmin(res, newAdminUser, superAdminsList) {
+    // * Create new super admin
+    if ((GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMINS_ALLOWED === 'UNLIMITED' || GLOBAL_CONSTANT.NUMBER_OF_SUPER_ADMINS_ALLOWED > superAdminsList.length) && (superAdminsList.length !== 0)) {
+        newAdminUser.save((err, SuperAdminSaved) => {
+            if (err) return GOT_ERROR(res, err, 'Super Admin'); // ! Error 
+            if (!SuperAdminSaved) return DATA_NOT_FOUND_ERROR(res, 'Super Admin'); // ! Error  
+
+            return DATA_SAVED_SUCCESSFULLY(res, 'Super Admin', 'Super admin created successfully.');
+        });
+    }
+}
+
+// Controller's Main Method // ! Used in adminSignup Controller
+function signupForAdmin(res, newAdminUser, creatorForAdmin) {
+    // ! Check if user is authorized to add new admin
+    AdminUserModel.findById({ _id: data.creator }, (err, Admin) => {
+        if (!Admin) return DATA_NOT_FOUND_ERROR(res, 'Admin'); // ! Error    
+        if (!Admin.is_super_admin) return NOT_ALLOWED_ERROR(res, 'to add sub-admin'); // ! Error  
+
+        // Multiple sub-admins are not allowed
+        if (!GLOBAL_CONSTANT.MULTIPLE_SUB_ADMINS_ALLOWED) {
+            return UPGRADE_PLAN_ERROR(res, 'Sub-Admin'); // ! Error 
+        } else {
+            addAdmin(res, newAdminUser, creatorForAdmin);
+        }
+    });
+}
+
+// * Used in signupForAdmin Method
+function addAdmin(res, newAdminUser, creatorForAdmin,) {
+    AdminUserModel.find().lean().then(Admins => {
+        const subAdminsList = Admins.filter(admin => !admin.is_super_admin);
+        const superAdminsList = Admins.filter(admin => admin.is_super_admin);
+
+        // If no Super Admin available return
+        if (superAdminsList.length == 0) {
+            return res.status(200).send({
+                status: GLOBAL_MESSAGES.ERROR_STATUS,
+                message: GLOBAL_MESSAGES.ERROR_CANNOT_CREATE_SUB_ADMIN_WITHOUT_SUPER_ADMIN_MESSAGE.replace('_LABEL_NAME', 'Sub-Admin')
+            });
+        }
+
+        // if there is no creator for sub admin return
+        if (!creatorForAdmin) return CONTACT_SUPER_ADMIN_ERROR(res, 'creation of Sub-Admin');
+
+        // Return If user already created provided numbers of sub-admins    
+        if (GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED != 'UNLIMITED') {
+            if (GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED == subAdminsList.length) {
+                return UPGRADE_PLAN_ERROR(res, 'Sub-Admin');
+            }
+        }
+
+        createNewAdmin(res, subAdminsList, newAdminUser);
+    }).catch(err => GOT_ERROR(res, err, 'Sub-Admin'));
+}
+
+// * Used in addAdmin Method
+function createNewAdmin(res, subAdminsList, newAdminUser) {
+    if (GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED == 'UNLIMITED' || GLOBAL_CONSTANT.NUMBER_OF_SUB_ADMINS_ALLOWED > subAdminsList.length) {
+        newAdminUser.save((err, SubAdminSaved) => {
+            if (err) return GOT_ERROR(res, err, 'Sub-Admin'); // ! Error 
+            if (!SubAdminSaved) return DATA_NOT_FOUND_ERROR(res, 'Sub-Admin'); // ! Error   
+
+            return DATA_SAVED_SUCCESSFULLY(res, 'Sub-Admin', 'Sub-Admin created successfully.');
+        })
+    }
+}
+
+// ? -----------------------------------------------------------------------------
+
+// * Method for Super & Sub Admin login
 exports.adminLogin = (req, res) => {
     AdminUserModel.findOne({ email: req.body.email.toLowerCase() }).then((AdminUserData) => {
         if (!AdminUserData) return DATA_NOT_FOUND_ERROR(res, 'User'); // ! Error   
@@ -184,7 +219,7 @@ exports.haveSuperAdmin = (req, res) => {
     })
 }
 
-// todo -> Method to get all sub-admins
+// * Method to get all sub-admins
 exports.getSubAdmins = (req, res) => {
     let userId = req.userId;
     AdminUserModel.find({ _id: userId }).then((UserData) => {
@@ -208,7 +243,7 @@ exports.getSubAdmins = (req, res) => {
     }).catch(err => GOT_ERROR(res, err, 'Sub-admins'));
 }
 
-// todo -> Method to get permissions of User
+// * Method to get permissions of User
 exports.getPermissionsList = (req, res) => {
     let data = req.body;
 
@@ -223,7 +258,7 @@ exports.getPermissionsList = (req, res) => {
     });
 }
 
-// todo -> Method to update permission of User
+// * Method to update permission of User
 exports.updatePermissions = (req, res) => {
     AdminUserModel.findOneAndUpdate({ _id: req.body._id }, { permissions: req.body.permissions }, (err, AdminUpdated) => {
         if (err) return GOT_ERROR(res, err, 'Permission'); // ! Error 
@@ -233,7 +268,7 @@ exports.updatePermissions = (req, res) => {
     });
 }
 
-// todo -> Method for forgot password
+// * Method for forgot password
 exports.forgotPassword = (req, res) => {
     AdminUserModel.findOne({ email: req.body.email.toLowerCase() }).then(Admin => {
         if (!Admin) return DATA_NOT_FOUND_ERROR(res, 'Email'); // ! Error  
@@ -243,7 +278,7 @@ exports.forgotPassword = (req, res) => {
             to: data.email.toLowerCase(),
             from: GLOBAL_CONSTANT.FROM_EMAIL_ADDRESS,
             subject: 'Forgot Password',
-            html: GLOBAL_MAIL.RESET_PASSWORD_HTML_TEMPLATE
+            html: GLOBAL_MAIL.RESET_PASSWORD_HTML_TEMPLATE(resetPasswordLink, '')
         }).then((mailSend) => {
             if (mailSend) {
                 return DATA_SAVED_SUCCESSFULLY(res, 'Forgot Password', GLOBAL_MESSAGES.MAIL_SEND_SUCCESSFULLY_MESSAGE.replace('_LABEL_NAME', 'Forgot Password'));;
@@ -253,7 +288,7 @@ exports.forgotPassword = (req, res) => {
     });
 }
 
-// todo -> Method for Change Password
+// * Method for Change Password
 exports.changePassword = (req, res) => {
     let data = req.body;
 
@@ -269,9 +304,9 @@ exports.changePassword = (req, res) => {
                 })
             }
 
-            // convert password to hash
-            bcrypt.hash(data.new_password, 10).then((hash) => {
-                User.password = hash;
+            // convert password to hashedPassword
+            bcrypt.hash(data.new_password, 10).then((hashedPassword) => {
+                User.password = hashedPassword;
                 // save the updated user with new password
                 User.save((err, PasswordUpdated) => {
                     if (err) return GOT_ERROR(res, err, 'Changing Password'); // ! Error
@@ -286,13 +321,13 @@ exports.changePassword = (req, res) => {
     })
 }
 
-// todo -> Method for Reset Password
+// * Method for Reset Password
 exports.resetPassword = (req, res) => {
     let data = req.body;
     AdminUserModel.findOne({ _id: data._id }).then((User) => {
-        // convert password to hash and save updated password
-        bcrypt.hash(data.password, 10).then((hash) => {
-            User.password = hash;
+        // convert password to hashedPassword and save updated password
+        bcrypt.hash(data.password, 10).then((hashedPassword) => {
+            User.password = hashedPassword;
             // save the updated user with new password
             User.save((err, PasswordUpdated) => {
                 // if error occur while saving new password                
@@ -306,7 +341,7 @@ exports.resetPassword = (req, res) => {
     })
 }
 
-// todo -> Method to get profile data of user
+// * Method to get profile data of user
 exports.getProfile = (req, res) => {
     AdminUserModel.findOne({ _id: req.body._id }).select('email name mobile_number is_super_admin creator permissions').then((User) => {
         if (!User) return DATA_NOT_FOUND_ERROR(res, 'User'); // ! Error 
@@ -320,7 +355,7 @@ exports.getProfile = (req, res) => {
     })
 }
 
-// todo -> Method to update User Profile
+// * Method to update User Profile
 exports.updateMyProfile = (req, res) => {
     let userId = req.userId;
     let data = req.body;

@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------
-// todo -> MESSAGES 
+// * MESSAGES 
 // ! *Use _LABEL_NAME to replace with pre-specified labels
 //----------------------------------------------------------------------------------
 exports.SUCCESS_STATUS = 'success';
